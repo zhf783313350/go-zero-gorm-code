@@ -3,10 +3,8 @@ package repository
 import (
 	"accesscontrol/internal/model"
 	"context"
-
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
-
 type UserRepository interface {
 	Insert(ctx context.Context, user *model.User) error
 	Update(ctx context.Context, user *model.User) error
@@ -19,11 +17,9 @@ type UserRepository interface {
 type sqlUserRepository struct {
 	db sqlx.SqlConn
 }
-
 func NewUserRepository(db sqlx.SqlConn) UserRepository {
 	return &sqlUserRepository{db: db}
 }
-
 func (r *sqlUserRepository) Insert(ctx context.Context, user *model.User) error {
 	query := `INSERT INTO users ("phoneNumber", status, "validTime") VALUES ($1, $2, $3)`
 	_, err := r.db.ExecCtx(ctx, query, user.PhoneNumber, user.Status, user.ValidTime)
@@ -69,13 +65,11 @@ func (r *sqlUserRepository) List(ctx context.Context, limit, offset int) ([]mode
 	if err != nil {
 		return nil, 0, err
 	}
-
 	var users []model.User
 	query := `SELECT id, "phoneNumber" AS phonenumber, status, "validTime" AS validtime FROM users ORDER BY id LIMIT $1 OFFSET $2`
 	err = r.db.QueryRowsCtx(ctx, &users, query, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
-
 	return users, total, nil
 }

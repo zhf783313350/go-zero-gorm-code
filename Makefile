@@ -116,6 +116,12 @@ db-backup:
 	docker-compose -f docker-compose.prod.yml exec -T postgres \
 		pg_dump -U postgres access_control > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
 
+# 数据库迁移 (使用 golang-migrate CLI, 如果本地安装了的话)
+# 也可以直接运行应用，应用启动时会自动 migrate
+migrate-create:
+	@read -p "请输入迁移名称: " name; \
+	migrate create -ext sql -dir internal/svc/migrations -seq $$name
+
 # 生成 API 文档
 swagger:
 	swag init
@@ -125,7 +131,7 @@ help:
 	@echo "==================== 构建相关 ===================="
 	@echo "  build          - 构建应用"
 	@echo "  build-prod     - 生产环境构建"
-	@echo "  run            - 运行应用"
+	@echo "  run            - 运行应用 (包含自动迁移)"
 	@echo "  test           - 运行测试"
 	@echo "  test-coverage  - 生成测试覆盖率报告"
 	@echo "  lint           - 代码检查"
@@ -150,3 +156,5 @@ help:
 	@echo ""
 	@echo "==================== 数据库相关 ===================="
 	@echo "  db-backup      - 备份数据库"
+	@echo "  migrate-create - 创建新的数据库迁移脚本"
+	@echo ""

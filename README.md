@@ -5,11 +5,13 @@
 ## 🚀 特性
 
 - **高性能**: 基于 Go-Zero 框架，支持高并发
+- **自动化迁移**: 集成 `golang-migrate`，程序启动自动同步数据库表结构
 - **容器化**: 完整的 Docker 支持，一键部署
 - **K8s 原生**: 支持 Kubernetes 部署，自动扩缩容
 - **监控完善**: 集成 Prometheus + Grafana 监控
 - **负载均衡**: Nginx 反向代理，自动负载均衡
-- **安全可靠**: JWT 认证，接口限流
+- **安全可靠**: JWT 认证，接口限流 (Token Bucket)
+- **并发保护**: 使用 `SingleFlight` 防御缓存击穿，完善的缓存穿透保护
 
 ## 📁 项目结构
 
@@ -27,20 +29,19 @@ access-control/
 │   ├── middleware/             # 中间件
 │   ├── model/                  # 数据模型
 │   ├── svc/                    # 服务上下文
+│   │   └── migrations/         # 数据库版本迁移脚本 [NEW]
 │   └── types/                  # 类型定义
 ├── deploy/
 │   ├── k8s/                    # Kubernetes 部署文件
 │   ├── nginx/                  # Nginx 配置
 │   ├── prometheus/             # Prometheus 配置
-│   ├── grafana/                # Grafana 配置
-│   └── sql/                    # 数据库脚本
-├── Dockerfile                   # Docker 构建文件 (开发)
-├── Dockerfile.prod             # Docker 构建文件 (生产)
+│   └── grafana/                # Grafana 配置
+├── Dockerfile                   # Docker 构建文件 (Go 1.26.0)
+├── Dockerfile.prod             # Docker 构建文件 (生产环境，Go 1.26.0)
 ├── docker-compose.yml          # Docker Compose (开发)
 ├── docker-compose.prod.yml     # Docker Compose (生产)
-├── deploy.ps1                  # 部署脚本 (Windows)
 ├── deploy.sh                   # 部署脚本 (Linux/Mac)
-├── Makefile                    # 构建脚本
+├── Makefile                    # 构建脚本 (包含迁移管理)
 └── README.md
 ```
 
@@ -48,7 +49,7 @@ access-control/
 
 ### 环境要求
 
-- Go 1.20+
+- **Go 1.26.0+** [UPDATED]
 - Docker 20.0+
 - Docker Compose 2.0+
 - PostgreSQL 14+ (或使用 Docker)
@@ -58,7 +59,7 @@ access-control/
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourname/access-control.git
+git clone https://github.com/zhf783313350/access-control.git
 cd access-control
 
 # 2. 安装依赖
@@ -67,9 +68,7 @@ go mod tidy
 # 3. 启动数据库和 Redis (使用 Docker)
 docker-compose up -d postgres redis
 
-# 4. 运行应用
-go run main.go -f etc/config.yaml
-# 或
+# 4. 运行应用 (程序会自动运行数据库迁移)
 make run
 ```
 
@@ -92,51 +91,22 @@ docker-compose down
 # 1. 复制环境变量配置
 cp .env.example .env
 
-# 2. 修改 .env 文件中的配置 (必须修改!)
-#    - DB_PASSWORD: 数据库密码
-#    - JWT_SECRET: JWT 密钥
-#    - GRAFANA_PASSWORD: Grafana 密码
+# 2. 修改 .env 文件中的配置 (必须修改 JWT_SECRET 等)
 
 # 3. 启动所有服务
-docker-compose -f docker-compose.prod.yml up -d
-
-# 或使用部署脚本 (Windows)
-.\deploy.ps1 start
-
-# 或使用部署脚本 (Linux/Mac)
 ./deploy.sh start
 ```
 
-### Kubernetes 部署
-
-```bash
-# 1. 修改 Secret 配置
-vim deploy/k8s/secret.yaml
-
-# 2. 部署到 K8s
-make deploy-k8s
-
-# 或使用脚本
-./k8s-deploy.sh deploy
-
-# 3. 查看状态
-make status-k8s
-```
-
-## 📊 监控访问
-
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| API | http://localhost:8080 | API 服务 |
-| Nginx | http://localhost:80 | 反向代理 |
-| Prometheus | http://localhost:9091 | 指标监控 |
-| Grafana | http://localhost:3000 | 可视化面板 |
-
-Grafana 默认账号: `admin` / `admin123`
-
 ## 🔧 常用命令
 
-### Make 命令
+### 数据库管理 (golang-migrate)
+
+```bash
+# 创建新的数据库迁移脚本
+make migrate-create
+```
+
+### 其他常用命令
 
 ```bash
 make help           # 查看所有命令
@@ -144,74 +114,33 @@ make build          # 构建应用
 make test           # 运行测试
 make lint           # 代码检查
 make docker-prod    # 构建生产镜像
-make docker-deploy  # 部署生产环境
 make db-backup      # 备份数据库
 ```
 
-### 部署脚本命令 (Windows)
+## 📡 API 接口 (部分说明)
 
-```powershell
-.\deploy.ps1 start      # 启动服务
-.\deploy.ps1 stop       # 停止服务
-.\deploy.ps1 restart    # 重启服务
-.\deploy.ps1 update     # 更新服务
-.\deploy.ps1 logs       # 查看日志
-.\deploy.ps1 status     # 查看状态
-.\deploy.ps1 backup     # 备份数据库
-```
+### 1. 查询用户
 
-## 📡 API 接口
+`POST /api/user/query` (根据手机号查询，带 SingleFlight 保护)
 
-### 用户登录
+### 2. 编辑用户
 
-```bash
-POST /api/user/login
-Content-Type: application/json
-
-{
-    "phoneNumber": "18888888888",
-    "password": "123456"
-}
-```
-
-### 响应示例
+`POST /api/user/edit` (根据手机号标识进行更新)
 
 ```json
 {
-    "code": 0,
-    "message": "登录成功",
-    "data": {
-        "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-        "accessExpire": 1769075546,
-        "userInfo": {
-            "id": 1,
-            "phoneNumber": "18888888888",
-            "createdAt": "2026-01-21 08:26:44",
-            "updatedAt": "2026-01-21 08:26:44"
-        }
-    }
+  "phoneNumber": "13800000001",
+  "status": 1,
+  "validTime": "2026-12-31 23:59:59"
 }
 ```
 
-## 🔒 安全配置
+## 📈 性能与稳定性
 
-生产环境必须修改以下配置：
-
-1. **JWT 密钥**: 使用强随机密钥
-   ```bash
-   openssl rand -base64 32
-   ```
-
-2. **数据库密码**: 使用强密码
-
-3. **Redis 密码**: 如果暴露在公网，必须设置密码
-
-## 📈 性能优化
-
-- 使用连接池管理数据库连接
-- Redis 缓存热点数据
-- Nginx 限流保护后端服务
-- K8s HPA 自动扩缩容
+- **缓存击穿**: 应用层 `SingleFlight` 确保同一个 Key 只有一个请求穿透到 DB。
+- **缓存穿透**: 对不存在的 Key 缓存 `empty` 占位符。
+- **限流保护**: 集成分布式令牌桶限流，防止瞬时峰值。
+- **优雅部署**: Docker 多阶段构建 + K8s HPA/PDB 支持。
 
 ## 🤝 贡献
 

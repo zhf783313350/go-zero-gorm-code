@@ -16,12 +16,22 @@ Database:
   Password: "123456"
   DBName: access_control
   SSLMode: disable
+  MaxOpenConns: 20
+  MaxIdleConns: 5
+  ConnMaxLifetime: 3600
+
+# 全局限流配置
+RateLimiter:
+  Rate: 100
+  Burst: 100
 
 # Redis配置 - 连接同一 Docker 网络内的 redis 容器
 Redis:
   Host: redis:6379
   Password: ""
   DB: 0
+  PoolSize: 20
+  MinIdleConns: 5
 # JWT配置
 Auth:
   AccessSecret: "your-secret-key-change-in-production"

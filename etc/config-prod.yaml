@@ -29,6 +29,11 @@ Database:
   MaxIdleConns: 10
   ConnMaxLifetime: 3600
 
+# 全局限流配置
+RateLimiter:
+  Rate: ${RATE_LIMIT_RATE:2000}
+  Burst: ${RATE_LIMIT_BURST:3000}
+
 # Redis配置 - 生产环境使用环境变量
 Redis:
   Host: ${REDIS_HOST:redis}:${REDIS_PORT:6379}

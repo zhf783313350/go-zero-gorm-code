@@ -38,11 +38,11 @@ COPY --from=builder /app/access-control .
 COPY --from=builder /app/etc /app/etc
 
 # 暴露端口
-EXPOSE 8082
+EXPOSE 8080
 
 # 健康检查（使用 TCP 端口检测）
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD nc -z localhost 8082 || exit 1
+    CMD nc -z localhost 8080 || exit 1
 
 # 运行应用（使用 Docker 专用配置）
 CMD ["./access-control", "-f", "etc/config-docker.yaml"]

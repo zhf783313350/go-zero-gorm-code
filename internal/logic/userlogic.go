@@ -34,7 +34,7 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
 
 	cacheKey := "user:phone:" + req.PhoneNumber
 
-	// 1. SingleFlight + Cache protection
+	// 1. SingleFlight + Cache protection 应对超大规模大并发
 	val, err := l.svcCtx.SingleGroup.Do(cacheKey, func() (interface{}, error) {
 		// 1.1 尝试从异步获取缓存 (再次检查，防止并发穿透)
 		var user model.User

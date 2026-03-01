@@ -40,6 +40,6 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: rateLimitMatch(ListUsersHandler(serverCtx)),
 			},
 		},
-		rest.WithPrefix("/v1/api"),
+		rest.WithPrefix("/api"),
 	)
 }

@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     "phoneNumber" VARCHAR(50) UNIQUE NOT NULL,
     status INTEGER DEFAULT 1,
-    "validTime" VARCHAR(50)
+    "validTime" VARCHAR(50),
+    "type" VARCHAR(50)
 );
 
 -- 创建索引

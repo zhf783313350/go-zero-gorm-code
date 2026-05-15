@@ -5,7 +5,6 @@ import (
 	"accesscontrol/internal/repository"
 	"fmt"
 	"time"
-
 	"github.com/zeromicro/go-zero/core/limit"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/syncx"
@@ -32,7 +31,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		c.Database.DBName,
 		c.Database.SSLMode,
 	)
-
+    fmt.Printf("Connecting to database with DSN: %s\n", dsn) // 输出 DSN 以便调试
 	// 连接数据库 (使用 GORM)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

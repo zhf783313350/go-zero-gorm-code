@@ -41,5 +41,6 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/api"),
+		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
 	)
 }

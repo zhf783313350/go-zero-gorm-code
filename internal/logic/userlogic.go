@@ -28,12 +28,13 @@ func NewUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UserLogic {
 }
 
 func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) {
+	//首先用户可能传了一个空的手机号码 在这里拦截 防止查询数据库量过大
 	if req.PhoneNumber == "" {
 		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号不能为空")
 	}
-
+    
 	cacheKey := "user:phone:" + req.PhoneNumber
-
+    
 	// 1. SingleFlight + Cache protection 应对超大规模大并发
 	val, err := l.svcCtx.SingleGroup.Do(cacheKey, func() (interface{}, error) {
 		// 1.1 尝试从异步获取缓存 (再次检查，防止并发穿透)
@@ -47,7 +48,6 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
 				return &user, nil
 			}
 		}
-
 		// 1.2 缓存未命中，从数据库查询
 		u, err := l.svcCtx.UserRepo.FindOneByPhone(l.ctx, req.PhoneNumber)
 		if err != nil {

@@ -9,7 +9,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -70,11 +72,39 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
 		return nil, err
 	}
 
+	user, ok := val.(*model.User)
+	if !ok {
+		if uVal, ok := val.(model.User); ok {
+			user = &uVal
+		}
+	}
+
+	// 生成 JWT Token
+	now := time.Now().Unix()
+	accessExpire := l.svcCtx.Config.Auth.AccessExpire
+	token, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, now, accessExpire, user.Id)
+	if err != nil {
+		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "生成Token失败")
+	}
+
 	return &types.Response{
-		Code:    http.StatusOK,
-		Message: "查询成功",
-		Data:    val,
+		Code:    200,
+		Message: "登录成功",
+		Data: types.LoginResponse{
+			AccessToken:  token,
+			AccessExpire: now + accessExpire,
+			UserInfo:     *user,
+		},
 	}, nil
+}
+
+func (l *UserLogic) getJwtToken(secretKey string, iat, seconds int64, userId int64) (string, error) {
+	claims := make(jwt.MapClaims)
+	claims["exp"] = iat + seconds
+	claims["iat"] = iat
+	claims["userId"] = userId
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
 }
 
 func (l *UserLogic) AddUser(req *types.RegisterRequest) (*types.Response, error) {

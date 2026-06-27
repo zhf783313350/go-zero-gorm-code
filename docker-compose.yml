@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
@@ -8,9 +6,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "123456"
-      POSTGRES_DB: access_control
+      POSTGRES_DB: zero_gorm_code
     ports:
-      - "15432:5432"
+      - "5432:5432"       # Postgres 默认端口映射
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -20,39 +18,43 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - access-control-network
+      - zero-gorm-network
 
   redis:
     image: redis:7
     container_name: redis
     restart: always
     ports:
-      - "16379:6379"
+      - "6379:6379"       # Redis 默认端口映射
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
     networks:
-      - access-control-network
+      - zero-gorm-network
 
-  access-control-api:
-    build: .
-    container_name: access-control
+  zero-gorm-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zero-gorm-code
+    restart: always
     ports:
-      - "8080:8080"
+      - "8080:8080"       # 👈 Go 服务对外端口严格改为默认 8080
+    volumes:
+      - ./etc:/app/etc
+    command: ["./zero-app", "-f", "etc/config.yaml"]
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
-    restart: always
     networks:
-      - access-control-network
+      - zero-gorm-network
 
 volumes:
   postgres_data:
   redis_data:
 
-
 networks:
-  access-control-network:
+  zero-gorm-network:
     driver: bridge

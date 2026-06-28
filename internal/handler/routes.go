@@ -13,16 +13,17 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 	rateLimitMatch := middleware.NewRateLimitMiddleware(serverCtx.RateLimiter).Handle
 
 	// 1. 无需 JWT 认证的公共路由 (登录/查询)
-	server.AddRoutes(
-		[]rest.Route{
-			{
-				Method:  http.MethodPost,
-				Path:    "/user/query",
-				Handler: rateLimitMatch(QueryUserHandler(serverCtx)),
-			},
-		},
-		rest.WithPrefix("/api"),
-	)
+server.AddRoutes(
+    []rest.Route{
+        {
+            Method:  http.MethodPost,
+            Path:    "/user/query",
+            // Handler: rateLimitMatch(QueryUserHandler(serverCtx)), // 👈 先把这一行注释掉
+            Handler: QueryUserHandler(serverCtx),                  // 👈 换成这行裸路由
+        },
+    },
+    rest.WithPrefix("/api"),
+)
 
 	// 2. 需要 JWT 认证的保护路由
 	server.AddRoutes(

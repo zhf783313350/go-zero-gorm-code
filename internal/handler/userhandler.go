@@ -14,7 +14,6 @@ func QueryUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         // 🔥 注入点 1：确认请求到底进没进这个 Handler
         fmt.Println("====== [FMT 调试] 请求已成功到达 QueryUserHandler ======")
-
         var req types.LoginRequest
         if err := httpx.Parse(r, &req); err != nil {
             // 🔥 注入点 2：用原生打印输出错误原因，防止被 logx 过滤
@@ -22,7 +21,6 @@ func QueryUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
             httpx.ErrorCtx(r.Context(), w, err)
             return
         }
-
         l := logic.NewUserLogic(r.Context(), svcCtx)
         resp, err := l.QueryUser(&req)
         if err != nil {
@@ -32,8 +30,6 @@ func QueryUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
         }
     }
 }
-
-
 // func QueryUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 //     return func(w http.ResponseWriter, r *http.Request) {
 //         fmt.Println("====== [FMT 调试] 请求已成功到达 QueryUserHandler ======")

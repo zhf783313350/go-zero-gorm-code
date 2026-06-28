@@ -18,8 +18,8 @@ server.AddRoutes(
         {
             Method:  http.MethodPost,
             Path:    "/user/query",
-            // Handler: rateLimitMatch(QueryUserHandler(serverCtx)), // 👈 先把这一行注释掉
-            Handler: QueryUserHandler(serverCtx),                  // 👈 换成这行裸路由
+            Handler: rateLimitMatch(QueryUserHandler(serverCtx)), // 👈 先把这一行注释掉
+         
         },
     },
     rest.WithPrefix("/api"),

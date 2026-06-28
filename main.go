@@ -30,7 +30,7 @@ func main() {
 	})
 	ctx := svc.NewServiceContext(c)
 	handler.SetupRoutes(server, ctx) 
- httpx.SetErrorHandler(func(err error) (int, interface{}) {
+     httpx.SetErrorHandler(func(err error) (int, interface{}) {
         switch e := err.(type) {
         case *errorx.CodeError:
             return http.StatusOK, e.Data()

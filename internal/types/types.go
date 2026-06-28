@@ -12,8 +12,9 @@ type Response struct {
 // 	PhoneNumber string `json:"phoneNumber"`
 // }
 // 查询请求
+// 查询请求
 type LoginRequest struct {
-    Status int `json:"status"` // 明确使用 int 类型的 status
+	PhoneNumber string `json:"phoneNumber"` // 👈 改为 string 类型的手机号
 }
 // 登录响应
 type LoginResponse struct {

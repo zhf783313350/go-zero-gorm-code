@@ -25,103 +25,23 @@ func NewUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UserLogic {
 		svcCtx: svcCtx,
 	}
 }
-// func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) {
-//     // 1. 拦截非法零值（int 类型未传或为 0 时拦截）
-//     if req.Status == 0 {
-//         return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "状态码不能为空")
-//     }
-    
-//     // 2. 依然保持你原有的缓存 Key 拼接方式（只把变量换成请求过来的 int 状态值）
-//     cacheKey := fmt.Sprintf("user:phone:%d", req.Status)
-    
-//     // 3. SingleFlight + Cache protection 应对大规模并发
-//     val, err := l.svcCtx.SingleGroup.Do(cacheKey, func() (interface{}, error) {
-//         // 3.1 尝试从 Redis 获取缓存
-//         var user model.User
-//         cacheVal, _ := l.svcCtx.Redis.Get(cacheKey)
-//         if cacheVal != "" {
-//             if cacheVal == "empty" {
-//                 return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在(缓存穿透保护)")
-//             }
-//             if err := json.Unmarshal([]byte(cacheVal), &user); err == nil {
-//                 return &user, nil
-//             }
-//         }
-        
-//         // 3.2 缓存未命中，调用你刚刚写好的 FindOneByStatus 方法
-//         u, err := l.svcCtx.UserRepo.FindOneByStatus(l.ctx, req.Status)
-//         if err != nil {
-//             if err == sql.ErrNoRows || err.Error() == "sql: no rows in result set" {
-//                 // 写入空缓存，防止缓存穿透
-//                 _ = l.svcCtx.Redis.Setex(cacheKey, "empty", 60)
-//                 return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
-//             }
-//             return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "数据库查询失败")
-//         }
-
-//         // 3.3 写入正常缓存 (10分钟)
-//         if data, err := json.Marshal(u); err == nil {
-//             _ = l.svcCtx.Redis.Setex(cacheKey, string(data), 600)
-//         }
-//         return u, nil
-//     })
-
-//     if err != nil {
-//         return nil, err
-//     }
-
-// // ================== 核心修复：安全获取 user 对象 ==================
-//     var user *model.User
-    
-//     switch v := val.(type) {
-//     case *model.User:
-//         user = v
-//     case model.User:
-//         user = &v
-//     default:
-//         // 如果数据存在但类型断言彻底失败，打印出实际类型，防止静默 Panic
-//         logx.Errorf("[QueryUser] 关键错误：数据存在，但类型不匹配! 实际类型为: %T", val)
-//         return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "服务内部数据解析失败")
-//     }
-
-//     if user == nil {
-//         return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "未找到有效的用户信息")
-//     }
-//     // ===============================================================
-
-//     // 生成 JWT Token （此时 user 绝对安全且有值）
-//     now := time.Now().Unix()
-//     accessExpire := l.svcCtx.Config.Auth.AccessExpire
-//     token, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, now, accessExpire, user.Id)
-//     if err != nil {
-//         return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "生成Token失败")
-//     }
-
-//     return &types.Response{
-//         Code:    200,
-//         Message: "登录成功",
-//         Data: types.LoginResponse{
-//             AccessToken:  token,
-//             AccessExpire: now + accessExpire,
-//             UserInfo:     *user,
-//         },
-//     }, nil
-// }
-
 func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) {
-    logx.Infof("[排查] 1. 进入 QueryUser, 接收到 status: %d", req.Status)
-
-    if req.Status == 0 {
-        return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "状态码不能为空")
+    // 1. 拦截非法零值（手机号未传或为空字符串时拦截）
+    if len(req.PhoneNumber) == 0 {
+        return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号码不能为空")
     }
     
-    cacheKey := fmt.Sprintf("user:phone:%d", req.Status)
+    // 2. 动态拼接缓存 Key（使用传入的手机号字符串作为标识）
+    cacheKey := fmt.Sprintf("user:phone:%s", req.PhoneNumber)
     
+    // 3. 【防止缓存击穿】使用 SingleFlight 机制，确保同手机号的并发请求只会查一次数据库
     val, err := l.svcCtx.SingleGroup.Do(cacheKey, func() (interface{}, error) {
-        logx.Infof("[排查] 2. 进入 SingleFlight 闭包")
         var user model.User
+        
+        // 3.1 尝试从 Redis 获取缓存
         cacheVal, _ := l.svcCtx.Redis.Get(cacheKey)
         if cacheVal != "" {
+            // 【防止缓存穿透】如果是空缓存标识，直接拦截
             if cacheVal == "empty" {
                 return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在(缓存穿透保护)")
             }
@@ -130,17 +50,20 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
             }
         }
         
-        logx.Infof("[排查] 3. 准备查询数据库")
-        u, err := l.svcCtx.UserRepo.FindOneByStatus(l.ctx, req.Status)
+        // 3.2 缓存未命中，调用 Repository 层根据手机号查询
+        // 💡 提示：你需要确保你的 UserRepo 里有 FindOneByPhoneNumber 这个方法
+        //  改成你接口里现有的方法名：
+         u, err := l.svcCtx.UserRepo.FindOneByPhone(l.ctx, req.PhoneNumber)
         if err != nil {
-            logx.Errorf("[排查] 3-Error. 数据库查询出错: %v", err)
             if err == sql.ErrNoRows || err.Error() == "sql: no rows in result set" {
+                // 【防止缓存穿透】数据库没捞到，写入 60 秒的空值标识
                 _ = l.svcCtx.Redis.Setex(cacheKey, "empty", 60)
                 return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
             }
             return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "数据库查询失败")
         }
 
+        // 3.3 数据库查询成功，写入正常缓存 (10分钟)
         if data, err := json.Marshal(u); err == nil {
             _ = l.svcCtx.Redis.Setex(cacheKey, string(data), 600)
         }
@@ -148,11 +71,10 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
     })
 
     if err != nil {
-        logx.Errorf("[排查] 4. SingleFlight 返回了错误: %v", err)
         return nil, err
     }
 
-    logx.Infof("[排查] 5. SingleFlight 成功返回，准备类型断言。val 类型为: %T", val)
+    // 4. 安全获取 user 对象类型断言
     var user *model.User
     switch v := val.(type) {
     case *model.User:
@@ -168,12 +90,11 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
         return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "未找到有效的用户信息")
     }
 
-    logx.Infof("[排查] 6. 类型断言成功，准备生成 JWT。检查配置是否存在: Auth.AccessSecret长度=%d", len(l.svcCtx.Config.Auth.AccessSecret))
+    // 5. 生成 JWT Token
     now := time.Now().Unix()
     accessExpire := l.svcCtx.Config.Auth.AccessExpire
     token, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, now, accessExpire, user.Id)
     if err != nil {
-        logx.Errorf("[排查] 6-Error. 生成Token失败: %v", err)
         return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "生成Token失败")
     }
 

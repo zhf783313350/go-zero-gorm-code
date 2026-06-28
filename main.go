@@ -1,11 +1,10 @@
 package main
-
 import (
-	"flag" 
 	"accesscontrol/internal/config"
 	"accesscontrol/internal/errorx"
 	"accesscontrol/internal/handler"
 	"accesscontrol/internal/svc"
+	"flag"
 	"net/http"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"

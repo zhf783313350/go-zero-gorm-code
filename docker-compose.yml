@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: "123456"
       POSTGRES_DB: zero_gorm_code
     ports:
-      - "5432:5432"       # Postgres 默认端口映射
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -25,7 +25,7 @@ services:
     container_name: redis
     restart: always
     ports:
-      - "6379:6379"       # Redis 默认端口映射
+      - "6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -36,10 +36,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: zero-gorm-code   # 👈 加上这一行，强制指定生成的镜像名字和标签
     container_name: zero-gorm-code
     restart: always
     ports:
-      - "8080:8080"       # 👈 Go 服务对外端口严格改为默认 8080
+      - "8080:8080"
     volumes:
       - ./etc:/app/etc
     command: ["./zero-app", "-f", "etc/config.yaml"]

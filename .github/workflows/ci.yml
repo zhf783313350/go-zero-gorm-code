@@ -1,4 +1,4 @@
-name: Go GitHub Actions CI
+name: Go GitHub Actions CI/CD
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
+  # ==========================================
+  # 阶段一：持续集成 (CI) - 自动测试与编译检查
+  # ==========================================
   go-ci-pipeline:
     runs-on: ubuntu-latest
 
@@ -17,7 +20,7 @@ jobs:
     - name: Set up Go environment
       uses: actions/setup-go@v5
       with:
-        go-version: '1.22'
+        go-version: '1.26' # 匹配你本地最新的 Go 1.26 版本
 
     - name: Install dependencies
       run: go mod download
@@ -27,3 +30,29 @@ jobs:
 
     - name: Run automated tests
       run: go test -v -race ./...
+
+  # ==========================================
+  # 阶段二：持续部署 (CD) - 自动连上阿里云重启容器
+  # ==========================================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: go-ci-pipeline # 必须等上面的 CI 编译测试成功后，才会执行部署
+    if: github.event_name == 'push' # 只有真正 push 代码时才触发部署，PR 拦截不部署
+
+    steps:
+    - name: Deploy to Alibaba Cloud
+      uses: appleboy/ssh-action@v1.0.3 # 行业标准的官方远程 SSH 插件
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        port: 22
+        script: |
+          # 进入你的阿里云项目目录
+          cd /home/go-zero-gorm-code
+          
+          # 严格拉取你刚刚推上来的最新源码
+          git pull origin master
+          
+          # 强制让 Docker 容器在云端现场根据最新的多阶段 Dockerfile 重新编译并拉起
+          docker compose up -d --build --force-recreate zero-gorm-code

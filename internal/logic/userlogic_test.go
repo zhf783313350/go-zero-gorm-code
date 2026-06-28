@@ -22,7 +22,7 @@ func BenchmarkQueryUser(b *testing.B) {
 	l := NewUserLogic(context.Background(), svcCtx)
 
 	req := &types.LoginRequest{
-		PhoneNumber: "13800138000",
+		Status: 1,
 	}
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {

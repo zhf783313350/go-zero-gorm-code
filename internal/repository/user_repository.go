@@ -14,12 +14,20 @@ type UserRepository interface {
 	FindOne(ctx context.Context, id int64) (*model.User, error)
 	FindOneByPhone(ctx context.Context, phone string) (*model.User, error)
 	List(ctx context.Context, limit, offset int) ([]model.User, int, error)
+	FindOneByStatus(ctx context.Context, status int) (*model.User, error)
 }
 
 type gormUserRepository struct {
 	db *gorm.DB
 }
-
+func (r *gormUserRepository) FindOneByStatus(ctx context.Context, status int) (*model.User, error) {
+	var user model.User
+	err := r.db.WithContext(ctx).Where(`"status" = ?`, status).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &gormUserRepository{db: db}
 }

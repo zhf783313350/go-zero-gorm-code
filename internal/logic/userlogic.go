@@ -70,19 +70,26 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
         return nil, err
     }
 
-user, ok := val.(*model.User)
-    if !ok {
-        if uVal, ok := val.(model.User); ok {
-            user = &uVal
-        }
+// ================== 核心修复：安全获取 user 对象 ==================
+    var user *model.User
+    
+    switch v := val.(type) {
+    case *model.User:
+        user = v
+    case model.User:
+        user = &v
+    default:
+        // 如果数据存在但类型断言彻底失败，打印出实际类型，防止静默 Panic
+        logx.Errorf("[QueryUser] 关键错误：数据存在，但类型不匹配! 实际类型为: %T", val)
+        return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "服务内部数据解析失败")
     }
 
-    // ✨ 新增防护锁：如果 user 最终还是 nil，说明根本没拿到用户对象，直接拦截
     if user == nil {
         return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "未找到有效的用户信息")
     }
+    // ===============================================================
 
-    // 生成 JWT Token （现在这里绝对安全了，因为 user 不可能为 nil）
+    // 生成 JWT Token （此时 user 绝对安全且有值）
     now := time.Now().Unix()
     accessExpire := l.svcCtx.Config.Auth.AccessExpire
     token, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, now, accessExpire, user.Id)

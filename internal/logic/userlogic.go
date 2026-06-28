@@ -27,7 +27,7 @@ func NewUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UserLogic {
 }
 func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) {
     // 1. 拦截非法零值（int 类型未传或为 0 时拦截）
-    if req.PhoneNumber == 0 {
+    if req.Status == 0 {
         return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "状态码不能为空")
     }
     

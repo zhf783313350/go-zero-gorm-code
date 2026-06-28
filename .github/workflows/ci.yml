@@ -55,4 +55,4 @@ jobs:
           git pull origin master
           
           # 强制让 Docker 容器在云端现场根据最新的多阶段 Dockerfile 重新编译并拉起
-          docker compose up -d --build --force-recreate zero-gorm-code
+          docker compose up -d --build --force-recreate

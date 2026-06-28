@@ -13,7 +13,7 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 	rateLimitMatch := middleware.NewRateLimitMiddleware(serverCtx.RateLimiter).Handle
 
 	// 1. 无需 JWT 认证的公共路由 (登录/查询)
-server.AddRoutes(
+   server.AddRoutes(
     []rest.Route{
         {
             Method:  http.MethodPost,

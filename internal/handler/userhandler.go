@@ -4,18 +4,21 @@ import (
 	"accesscontrol/internal/logic"
 	"accesscontrol/internal/svc"
 	"accesscontrol/internal/types"
+	"fmt"
 	"net/http"
-
-	"github.com/zeromicro/go-zero/core/logx"
+ 
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func QueryUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
+        // 🔥 注入点 1：确认请求到底进没进这个 Handler
+        fmt.Println("====== [FMT 调试] 请求已成功到达 QueryUserHandler ======")
+
         var req types.LoginRequest
         if err := httpx.Parse(r, &req); err != nil {
-            // 🎯 核心注入：看看究竟是格式不对还是少了什么字段！
-            logx.Errorf("[Handler层致命错误] httpx.Parse 解析请求参数失败! 原因: %v", err)
+            // 🔥 注入点 2：用原生打印输出错误原因，防止被 logx 过滤
+            fmt.Printf("====== [FMT 调试] httpx.Parse 失败!! 原因: %v\n", err)
             httpx.ErrorCtx(r.Context(), w, err)
             return
         }

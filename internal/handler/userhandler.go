@@ -5,25 +5,29 @@ import (
 	"accesscontrol/internal/svc"
 	"accesscontrol/internal/types"
 	"net/http"
+
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func QueryUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.LoginRequest
-		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
+    return func(w http.ResponseWriter, r *http.Request) {
+        var req types.LoginRequest
+        if err := httpx.Parse(r, &req); err != nil {
+            // 🎯 核心注入：看看究竟是格式不对还是少了什么字段！
+            logx.Errorf("[Handler层致命错误] httpx.Parse 解析请求参数失败! 原因: %v", err)
+            httpx.ErrorCtx(r.Context(), w, err)
+            return
+        }
 
-		l := logic.NewUserLogic(r.Context(), svcCtx)
-		resp, err := l.QueryUser(&req)
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
-		}
-	}
+        l := logic.NewUserLogic(r.Context(), svcCtx)
+        resp, err := l.QueryUser(&req)
+        if err != nil {
+            httpx.ErrorCtx(r.Context(), w, err)
+        } else {
+            httpx.OkJsonCtx(r.Context(), w, resp)
+        }
+    }
 }
 
 // AddUserHandler 添加用户

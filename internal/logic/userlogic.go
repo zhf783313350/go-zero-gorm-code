@@ -70,14 +70,19 @@ func (l *UserLogic) QueryUser(req *types.LoginRequest) (*types.Response, error) 
         return nil, err
     }
 
-    user, ok := val.(*model.User)
+user, ok := val.(*model.User)
     if !ok {
         if uVal, ok := val.(model.User); ok {
             user = &uVal
         }
     }
 
-    // 生成 JWT Token
+    // ✨ 新增防护锁：如果 user 最终还是 nil，说明根本没拿到用户对象，直接拦截
+    if user == nil {
+        return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "未找到有效的用户信息")
+    }
+
+    // 生成 JWT Token （现在这里绝对安全了，因为 user 不可能为 nil）
     now := time.Now().Unix()
     accessExpire := l.svcCtx.Config.Auth.AccessExpire
     token, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, now, accessExpire, user.Id)

@@ -18,7 +18,7 @@ func main() {
 	flag.Parse()
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
-	server := rest.MustNewServer(c.RestConf)
+	server := rest.MustNewServer(c.RestConf, rest.WithCors())
 	defer server.Stop() 
 	httpx.SetErrorHandler(func(err error) (int, interface{}) {
 		switch e := err.(type) {
@@ -41,23 +41,7 @@ func main() {
             return http.StatusInternalServerError, nil
         }
     })
-
-     server.Use(func(next http.HandlerFunc) http.HandlerFunc {
-        return func(w http.ResponseWriter, r *http.Request) {
-            w.Header().Set("Access-Control-Allow-Origin", "*")
-            w.Header().Set("Access-Control-Allow-Headers", "Content-Type, AccessToken, X-CSRF-Token, Authorization, Token")
-            w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-            w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
-            w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-            // 如果是浏览器的 OPTIONS 探路请求，直接返回 204
-            if r.Method == "OPTIONS" {
-                w.WriteHeader(http.StatusNoContent)
-                return
-            }
-            next(w, r)
-        }
-    })
+ 
 
 	server.Start()
 }

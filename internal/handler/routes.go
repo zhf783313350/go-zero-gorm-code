@@ -52,4 +52,18 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 		rest.WithPrefix("/api"),
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
 	)
+
+	// 3. 基础健康检查 (供 Kubernetes Liveness/Readiness 探针调用)
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/health",
+				Handler: func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte("OK"))
+				},
+			},
+		},
+	)
 }

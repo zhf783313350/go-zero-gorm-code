@@ -50,7 +50,7 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/api"),
-		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+	//	rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
 	)
 
 	// 3. 基础健康检查 (供 Kubernetes Liveness/Readiness 探针调用)

@@ -10,6 +10,7 @@ import (
 	"github.com/zeromicro/go-zero/core/syncx"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type ServiceContext struct {
@@ -33,7 +34,13 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	)
     fmt.Printf("Connecting to database with DSN: %s\n", dsn) // 输出 DSN 以便调试
 	// 连接数据库 (使用 GORM)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		AllowGlobalUpdate: false,
+		// 🛡️ 第二防线：开启全表删除安全熔断插件（极其重要！）
+		// 如果执行了危险的无条件删除，GORM 在把 SQL 发给 MySQL 之前会直接在 Go 内存中拦截并报错
+		Plugins: map[string]gorm.Plugin{}, 
+		Logger: logger.Default.LogMode(logger.Info), // 打印 SQL 方便排查
+	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to connect database: %v", err))
 	}

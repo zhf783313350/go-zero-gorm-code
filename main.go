@@ -6,20 +6,27 @@ import (
 	"accesscontrol/internal/handler"
 	"accesscontrol/internal/svc"
 	"flag"
-	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
+
 var configFile = flag.String("f", "etc/config.yaml", "the config file")
+
 func main() {
 	flag.Parse()
+
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
+
 	server := rest.MustNewServer(c.RestConf, rest.WithCors())
-	defer server.Stop() 
+	defer server.Stop()
+
 	httpx.SetErrorHandler(func(err error) (int, interface{}) {
 		switch e := err.(type) {
 		case *errorx.CodeError:
@@ -28,20 +35,15 @@ func main() {
 			return http.StatusInternalServerError, nil
 		}
 	})
+
 	ctx := svc.NewServiceContext(c)
-	handler.SetupRoutes(server, ctx) 
-     httpx.SetErrorHandler(func(err error) (int, interface{}) {
-        switch e := err.(type) {
-        case *errorx.CodeError:
-            return http.StatusOK, e.Data()
-        default:
+	handler.SetupRoutes(server, ctx)
 
-            // 🔥 注入点 3：看看全局捕获到了什么底层错误
-            fmt.Printf("====== [FMT 调试] 全局异常处理器捕获到未知错误: %v\n", err)
-            return http.StatusInternalServerError, nil
-        }
-    })
- 
+	go func() {
+		server.Start()
+	}()
 
-	server.Start()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
 }

@@ -2,9 +2,11 @@ package svc
 
 import (
 	"accesscontrol/internal/config"
+	"accesscontrol/internal/domain"
 	"accesscontrol/internal/repository"
 	"fmt"
 	"time"
+
 	"github.com/zeromicro/go-zero/core/limit"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/syncx"
@@ -16,14 +18,13 @@ import (
 type ServiceContext struct {
 	Config      config.Config
 	DB          *gorm.DB
-	UserRepo    repository.UserRepository
+	UserRepo    domain.UserRepository
 	Redis       *redis.Redis
 	RateLimiter *limit.TokenLimiter
 	SingleGroup syncx.SingleFlight
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	// 构建 PostgreSQL DSN
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Database.Host,
 		c.Database.Port,
@@ -32,20 +33,16 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		c.Database.DBName,
 		c.Database.SSLMode,
 	)
-    fmt.Printf("Connecting to database with DSN: %s\n", dsn) // 输出 DSN 以便调试
-	// 连接数据库 (使用 GORM)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		AllowGlobalUpdate: false,
-		// 🛡️ 第二防线：开启全表删除安全熔断插件（极其重要！）
-		// 如果执行了危险的无条件删除，GORM 在把 SQL 发给 MySQL 之前会直接在 Go 内存中拦截并报错
-		Plugins: map[string]gorm.Plugin{}, 
-		Logger: logger.Default.LogMode(logger.Info), // 打印 SQL 方便排查
+		Plugins:           map[string]gorm.Plugin{},
+		Logger:            logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to connect database: %v", err))
 	}
 
-	// 配置连接池
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic(fmt.Sprintf("failed to get underlying sql.DB: %v", err))
@@ -54,7 +51,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	sqlDB.SetMaxIdleConns(c.Database.MaxIdleConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(c.Database.ConnMaxLifetime) * time.Second)
 
-	// 运行数据库迁移 (golang-migrate 使用 URL 格式 DSN)
 	migrationDsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		c.Database.User,
 		c.Database.Password,
@@ -67,13 +63,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(fmt.Sprintf("failed to run database migrations: %v", err))
 	}
 
-	// 初始化 Redis
 	rds := redis.New(c.Redis.Host, func(r *redis.Redis) {
 		r.Type = redis.NodeType
 		r.Pass = c.Redis.Password
 	})
 
-	// 初始化 RateLimiter
 	limiter := limit.NewTokenLimiter(c.RateLimiter.Rate, c.RateLimiter.Burst, rds, "api-rate-limit")
 
 	return &ServiceContext{

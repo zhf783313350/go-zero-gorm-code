@@ -3,6 +3,7 @@ module accesscontrol
 go 1.26.0
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/zeromicro/go-zero v1.10.0
 	gorm.io/driver/postgres v1.6.0
@@ -17,7 +18,6 @@ require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grafana/pyroscope-go v1.2.7 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect

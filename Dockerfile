@@ -11,7 +11,14 @@ RUN go build -o /build/zero-app main.go
 
 # 第二阶段：纯净运行环境
 FROM alpine:latest
-RUN apk update --no-cache && apk add --no-cache ca-certificates tzdata
+
+# 🔥 核心修复：执行 apk 之前，先将 Alpine 的官方海外源替换为国内阿里云源，彻底解决卡死和超时问题
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk update --no-cache && \
+    apk add --no-cache ca-certificates tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
 WORKDIR /app
 
 # 把第一阶段现场编译出来的全新二进制文件拷过来

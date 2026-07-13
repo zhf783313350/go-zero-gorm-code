@@ -3,6 +3,7 @@ package logic
 import (
 	"accesscontrol/internal/domain"
 	"accesscontrol/internal/errorx"
+	"accesscontrol/internal/event"
 	"accesscontrol/internal/svc"
 	"accesscontrol/internal/types"
 	"context"
@@ -98,6 +99,13 @@ func (l *UserLogic) Login(req *types.LoginRequest) (*types.Response, error) {
 		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "生成Token失败")
 	}
 
+	// 异步投递登录事件（不阻塞主流程，用于审计日志）
+	l.svcCtx.EventBus.Publish(event.UserEvent{
+		Type:        event.EventUserLogin,
+		PhoneNumber: user.PhoneNumber,
+		UserID:      user.ID,
+	})
+
 	return &types.Response{
 		Code:    200,
 		Message: "登录成功",
@@ -156,6 +164,12 @@ func (l *UserLogic) AddUser(req *types.RegisterRequest) (*types.Response, error)
 		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "添加用户失败")
 	}
 
+	// 异步投递用户创建事件（审计 / 下游通知）
+	l.svcCtx.EventBus.Publish(event.UserEvent{
+		Type:        event.EventUserCreated,
+		PhoneNumber: user.PhoneNumber,
+	})
+
 	return &types.Response{
 		Code:    http.StatusOK,
 		Message: "用户创建成功",
@@ -188,7 +202,22 @@ func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, err
 	}
 
 	cacheKey := "user:phone:" + user.PhoneNumber
+
+	// 【缓存延迟双删】解决主从复制延迟导致的脏缓存问题：
+	// 第一次删：立即删除旧缓存，让后续读请求穿透到数据库拿到最新数据并回填缓存。
+	// 第二次删（延迟 500ms）：覆盖主从延迟窗口期内可能被从库旧数据重新回填的缓存。
 	_, _ = l.svcCtx.Redis.Del(cacheKey)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		_, _ = l.svcCtx.Redis.Del(cacheKey)
+		logx.Infof("[Cache] delayed double-delete executed for key: %s", cacheKey)
+	}()
+
+	// 异步投递用户更新事件
+	l.svcCtx.EventBus.Publish(event.UserEvent{
+		Type:        event.EventUserUpdated,
+		PhoneNumber: user.PhoneNumber,
+	})
 
 	return &types.Response{
 		Code:    http.StatusOK,
@@ -213,7 +242,21 @@ func (l *UserLogic) DeleteUser(phoneNumber string) (*types.Response, error) {
 	}
 
 	cacheKey := "user:phone:" + phoneNumber
+
+	// 【缓存延迟双删】
 	_, _ = l.svcCtx.Redis.Del(cacheKey)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		_, _ = l.svcCtx.Redis.Del(cacheKey)
+		logx.Infof("[Cache] delayed double-delete executed for key: %s", cacheKey)
+	}()
+
+	// 异步投递用户删除事件
+	l.svcCtx.EventBus.Publish(event.UserEvent{
+		Type:        event.EventUserDeleted,
+		PhoneNumber: phoneNumber,
+		UserID:      user.ID,
+	})
 
 	return &types.Response{
 		Code:    http.StatusOK,

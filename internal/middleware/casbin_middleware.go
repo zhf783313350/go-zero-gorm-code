@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -27,27 +28,44 @@ func NewCasbinMiddleware(enforcer *casbin.Enforcer) *CasbinMiddleware {
 // Handle 返回一个链式 http.HandlerFunc 包装器。
 func (m *CasbinMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// go-zero JWT 中间件将 Claims 以 interface{} 类型存入 Context，
-		// 数字类型（如 userId）在 JSON 解码后默认为 float64。
 		userIdRaw := r.Context().Value("userId")
+		if userIdRaw == nil {
+			claimsRaw := r.Context().Value("claims")
+			if claimsRaw != nil {
+				if claims, ok := claimsRaw.(map[string]interface{}); ok {
+					userIdRaw = claims["userId"]
+				}
+			}
+		}
 		if userIdRaw == nil {
 			httpx.WriteJson(w, http.StatusForbidden, map[string]interface{}{
 				"code":    403,
-				"message": "Forbidden: 无法识别用户身份",
+				"message": fmt.Sprintf("Forbidden: 无法识别用户身份, userIdRaw=%v, type=%T", userIdRaw, userIdRaw),
 			})
 			return
 		}
 
-		// 将 float64 转为字符串，作为 Casbin 的 subject
-		userIdFloat, ok := userIdRaw.(float64)
-		if !ok {
-			httpx.WriteJson(w, http.StatusForbidden, map[string]interface{}{
-				"code":    403,
-				"message": "Forbidden: 用户身份格式错误",
-			})
-			return
+		var subject string
+		switch v := userIdRaw.(type) {
+		case float64:
+			subject = fmt.Sprintf("%d", int64(v))
+		case int64:
+			subject = fmt.Sprintf("%d", v)
+		case int:
+			subject = fmt.Sprintf("%d", v)
+		case string:
+			subject = v
+		default:
+			if num, ok := v.(json.Number); ok {
+				subject = num.String()
+			} else {
+				httpx.WriteJson(w, http.StatusForbidden, map[string]interface{}{
+					"code":    403,
+					"message": fmt.Sprintf("Forbidden: 用户身份格式错误, type=%T, value=%v", userIdRaw, userIdRaw),
+				})
+				return
+			}
 		}
-		subject := fmt.Sprintf("%d", int64(userIdFloat))
 
 		// 请求的资源路径和 HTTP 方法
 		resource := r.URL.Path

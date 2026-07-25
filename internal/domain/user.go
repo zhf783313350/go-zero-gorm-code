@@ -10,6 +10,7 @@ import (
 type User struct {
 	ID          int64
 	PhoneNumber string
+	Password    string
 	Status      UserStatus
 	ValidTime   time.Time
 	CreatedAt   time.Time

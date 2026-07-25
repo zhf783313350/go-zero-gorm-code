@@ -8,11 +8,12 @@ type Response struct {
 
 type LoginRequest struct {
 	PhoneNumber string `json:"phoneNumber"`
+	Password    string `json:"password"`
 }
 
 type LoginResponse struct {
-	AccessToken  string  `json:"accessToken"`
-	AccessExpire int64   `json:"accessExpire"`
+	AccessToken  string   `json:"accessToken"`
+	AccessExpire int64    `json:"accessExpire"`
 	UserInfo     UserInfo `json:"userInfo"`
 }
 
@@ -25,12 +26,14 @@ type UserInfo struct {
 
 type RegisterRequest struct {
 	PhoneNumber string `json:"phoneNumber"`
+	Password    string `json:"password"`
 	ValidTime   string `json:"validTime"`
 	Status      int    `json:"status"`
 }
 
 type UpdateUserRequest struct {
 	PhoneNumber string `json:"phoneNumber"`
+	Password    string `json:"password"`
 	Status      int    `json:"status"`
 	ValidTime   string `json:"validTime"`
 }
@@ -45,6 +48,6 @@ type ListUsersRequest struct {
 }
 
 type ListUsersResponse struct {
-	Total int       `json:"total"`
+	Total int        `json:"total"`
 	List  []UserInfo `json:"list"`
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserLogic struct {
@@ -32,8 +33,8 @@ func NewUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UserLogic {
 }
 
 func (l *UserLogic) Login(req *types.LoginRequest) (*types.Response, error) {
-	if len(req.PhoneNumber) == 0 {
-		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号码不能为空")
+	if len(req.PhoneNumber) == 0 || len(req.Password) == 0 {
+		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号码和密码不能为空")
 	}
 
 	cacheKey := fmt.Sprintf("user:phone:%s", req.PhoneNumber)
@@ -92,6 +93,10 @@ func (l *UserLogic) Login(req *types.LoginRequest) (*types.Response, error) {
 		return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户已过期")
 	}
 
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "密码错误")
+	}
+
 	now := time.Now().Unix()
 	accessExpire := l.svcCtx.Config.Auth.AccessExpire
 	token, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, now, accessExpire, user.ID)
@@ -132,8 +137,8 @@ func (l *UserLogic) getJwtToken(secretKey string, iat, seconds int64, userId int
 }
 
 func (l *UserLogic) AddUser(req *types.RegisterRequest) (*types.Response, error) {
-	if req.PhoneNumber == "" || req.ValidTime == "" {
-		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号或有效时间不能为空")
+	if req.PhoneNumber == "" || req.Password == "" || req.ValidTime == "" {
+		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号、密码或有效时间不能为空")
 	}
 
 	validTime, err := time.Parse("2006-01-02 15:04:05", req.ValidTime)
@@ -141,8 +146,15 @@ func (l *UserLogic) AddUser(req *types.RegisterRequest) (*types.Response, error)
 		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "有效时间格式错误，应为: 2006-01-02 15:04:05")
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		logx.Errorf("密码哈希失败: %v", err)
+		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "密码处理失败")
+	}
+
 	user := &domain.User{
 		PhoneNumber: req.PhoneNumber,
+		Password:    string(hashedPassword),
 		Status:      domain.UserStatus(req.Status),
 		ValidTime:   validTime,
 		CreatedAt:   time.Now(),
@@ -189,6 +201,15 @@ func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, err
 	user, err := l.svcCtx.UserRepo.FindByPhone(l.ctx, req.PhoneNumber)
 	if err != nil {
 		return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
+	}
+
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			logx.Errorf("密码哈希失败: %v", err)
+			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "密码处理失败")
+		}
+		user.Password = string(hashedPassword)
 	}
 
 	user.Status = domain.UserStatus(req.Status)
@@ -284,7 +305,6 @@ func (l *UserLogic) ListUsers(page, pageSize int) (*types.Response, error) {
 			ValidTime:   u.ValidTime.Format("2006-01-02 15:04:05"),
 		})
 	}
-
 
 	return &types.Response{
 		Code:    http.StatusOK,

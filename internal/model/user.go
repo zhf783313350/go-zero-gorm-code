@@ -4,6 +4,7 @@ package model
 type User struct {
 	Id          int64  `gorm:"column:id;primaryKey" json:"id"`
 	PhoneNumber string `gorm:"column:phoneNumber"   json:"phoneNumber"`
+	Password    string `gorm:"column:password"      json:"-"`
 	Status      int    `gorm:"column:status"        json:"status"`
 	ValidTime   string `gorm:"column:validTime"     json:"validTime"`
 }

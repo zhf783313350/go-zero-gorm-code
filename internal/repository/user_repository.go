@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
 	"gorm.io/gorm"
 )
 
@@ -109,6 +108,7 @@ func domainToModel(d *domain.User) *model.User {
 	return &model.User{
 		Id:          d.ID,
 		PhoneNumber: d.PhoneNumber,
+		Password:    d.Password,
 		Status:      int(d.Status),
 		ValidTime:   d.ValidTime.Format("2006-01-02 15:04:05"),
 	}
@@ -119,6 +119,7 @@ func modelToDomain(m *model.User) *domain.User {
 	return &domain.User{
 		ID:          m.Id,
 		PhoneNumber: m.PhoneNumber,
+		Password:    m.Password,
 		Status:      domain.UserStatus(m.Status),
 		ValidTime:   validTime,
 	}

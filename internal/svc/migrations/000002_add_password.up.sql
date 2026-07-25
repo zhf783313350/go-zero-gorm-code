@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN password VARCHAR(255);
+
+UPDATE users SET password = '$2a$10$wpmdLxGvNSjhHHVq7JurlOEfE2hWxRR.mndC8NDP6K5HKZxIJk606' WHERE password IS NULL;

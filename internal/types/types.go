@@ -40,7 +40,8 @@ type UpdateUserRequest struct {
 }
 
 type DeleteUserRequest struct {
-	PhoneNumber string `json:"phoneNumber"`
+	ID          int64  `json:"id"`
+	PhoneNumber string `json:"phoneNumber,optional"`
 }
 
 type ListUsersRequest struct {

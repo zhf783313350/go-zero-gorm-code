@@ -25,7 +25,7 @@ func (r *gormUserRepository) Insert(ctx context.Context, user *domain.User) erro
 
 func (r *gormUserRepository) Update(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Exec(
-		"UPDATE users SET password = ?, status = ?, validTime = ? WHERE id = ?",
+		`UPDATE users SET password = ?, status = ?, "validTime" = ? WHERE id = ?`,
 		user.Password, user.Status, user.ValidTime.Format("2006-01-02 15:04:05"), user.ID,
 	).Error
 }

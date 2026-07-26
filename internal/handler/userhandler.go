@@ -77,7 +77,7 @@ func EditUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		if req.PhoneNumber != "" {
-			err := svcCtx.DB.Exec("UPDATE users SET phoneNumber = ? WHERE id = ?", req.PhoneNumber, req.ID).Error
+			err := svcCtx.DB.Exec(`UPDATE users SET "phoneNumber" = ? WHERE id = ?`, req.PhoneNumber, req.ID).Error
 			if err != nil {
 				httpx.OkJsonCtx(r.Context(), w, types.Response{Code: 500, Message: "更新失败: " + err.Error()})
 				return
@@ -93,7 +93,7 @@ func EditUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		if req.ValidTime != "" {
-			err := svcCtx.DB.Exec("UPDATE users SET validTime = ? WHERE id = ?", req.ValidTime, req.ID).Error
+			err := svcCtx.DB.Exec(`UPDATE users SET "validTime" = ? WHERE id = ?`, req.ValidTime, req.ID).Error
 			if err != nil {
 				httpx.OkJsonCtx(r.Context(), w, types.Response{Code: 500, Message: "更新失败: " + err.Error()})
 				return
@@ -107,12 +107,12 @@ func EditUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 func DeleteUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.DeleteUserRequest
-		if err := httpx.Parse(r, &req); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 		l := logic.NewUserLogic(r.Context(), svcCtx)
-		resp, err := l.DeleteUser(req.PhoneNumber)
+		resp, err := l.DeleteUser(req.ID, req.PhoneNumber)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

@@ -120,11 +120,13 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 	// 允许 admin 角色访问所有的受保护接口
 	if len(enforcer.GetPolicy()) == 0 {
 		_, _ = enforcer.AddPolicy("admin", "/api/user/add", "POST")
+		_, _ = enforcer.AddPolicy("admin", "/api/user/create", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/update", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/delete", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/list", "POST")
 		// 允许普通用户角色访问所有接口
 		_, _ = enforcer.AddPolicy("user", "/api/user/add", "POST")
+		_, _ = enforcer.AddPolicy("user", "/api/user/create", "POST")
 		_, _ = enforcer.AddPolicy("user", "/api/user/update", "POST")
 		_, _ = enforcer.AddPolicy("user", "/api/user/delete", "POST")
 		_, _ = enforcer.AddPolicy("user", "/api/user/list", "POST")

@@ -241,12 +241,18 @@ func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, err
 	}, nil
 }
 
-func (l *UserLogic) DeleteUser(phoneNumber string) (*types.Response, error) {
-	if phoneNumber == "" {
-		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号不能为空")
+func (l *UserLogic) DeleteUser(id int64, phoneNumber string) (*types.Response, error) {
+	var user *domain.User
+	var err error
+
+	if id > 0 {
+		user, err = l.svcCtx.UserRepo.FindOne(l.ctx, id)
+	} else if phoneNumber != "" {
+		user, err = l.svcCtx.UserRepo.FindByPhone(l.ctx, phoneNumber)
+	} else {
+		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "ID或手机号不能为空")
 	}
 
-	user, err := l.svcCtx.UserRepo.FindByPhone(l.ctx, phoneNumber)
 	if err != nil {
 		return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
 	}
@@ -257,7 +263,7 @@ func (l *UserLogic) DeleteUser(phoneNumber string) (*types.Response, error) {
 		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "删除用户失败")
 	}
 
-	cacheKey := "user:phone:" + phoneNumber
+	cacheKey := "user:phone:" + user.PhoneNumber
 
 	// 【缓存延迟双删】
 	_, _ = l.svcCtx.Redis.Del(cacheKey)

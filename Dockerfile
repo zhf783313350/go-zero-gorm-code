@@ -12,7 +12,7 @@ RUN go build -o /build/zero-app main.go
 # 第二阶段：纯净运行环境
 FROM alpine:latest
 
-# 🔥 核心修复：执行 apk 之前，先将 Alpine 的官方海外源替换为国内阿里云源，彻底解决卡死和超时问题
+# 执行 apk 之前，先将 Alpine 的官方海外源替换为国内阿里云源，彻底解决卡死和超时问题
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
     apk update --no-cache && \
     apk add --no-cache ca-certificates tzdata && \
@@ -24,5 +24,13 @@ WORKDIR /app
 # 把第一阶段现场编译出来的全新二进制文件拷过来
 COPY --from=builder /build/zero-app /app/zero-app
 COPY etc /app/etc
+
+# 🛠️ 终极全面兼容修复：
+# 方案 1：在容器根目录下放一份 migrations
+COPY --from=builder /build/internal/svc/migrations /app/migrations
+
+# 方案 2：在子包路径下也放一份 migrations
+RUN mkdir -p /app/internal/svc
+COPY --from=builder /build/internal/svc/migrations /app/internal/svc/migrations
 
 CMD ["./zero-app", "-f", "etc/access-control-api.yaml"]

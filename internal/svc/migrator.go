@@ -7,7 +7,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/zeromicro/go-zero/core/logx"
 )
-//go:embed migrations/*.sql
 var migrationsFS embed.FS
 func RunMigrations(dsn string) error {
 	d, err := iofs.New(migrationsFS, "migrations")

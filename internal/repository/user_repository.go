@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -23,8 +24,10 @@ func (r *gormUserRepository) Insert(ctx context.Context, user *domain.User) erro
 }
 
 func (r *gormUserRepository) Update(ctx context.Context, user *domain.User) error {
-	modelUser := domainToModel(user)
-	return r.db.WithContext(ctx).Save(modelUser).Error
+	return r.db.WithContext(ctx).Exec(
+		"UPDATE users SET password = ?, status = ?, validTime = ? WHERE id = ?",
+		user.Password, user.Status, user.ValidTime.Format("2006-01-02 15:04:05"), user.ID,
+	).Error
 }
 
 func (r *gormUserRepository) Delete(ctx context.Context, id int64) error {

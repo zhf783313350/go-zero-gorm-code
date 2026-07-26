@@ -10,7 +10,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
@@ -31,13 +33,16 @@ func main() {
 		case *errorx.CodeError:
 			return http.StatusOK, e.Data()
 		default:
-			return http.StatusInternalServerError, nil
+			logx.Errorf("Unexpected error: %v", err)
+			return http.StatusInternalServerError, map[string]interface{}{
+				"code":    500,
+				"message": err.Error(),
+			}
 		}
 	})
 
 	ctx := svc.NewServiceContext(c)
 	handler.SetupRoutes(server, ctx)
-
 	// 1. 启动轻量级后台事件总线消费者
 	stopEventBus := make(chan struct{})
 	ctx.EventBus.Start(stopEventBus)

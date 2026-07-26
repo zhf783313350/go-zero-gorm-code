@@ -36,7 +36,7 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/user/edit",
+				Path:    "/user/update",
 				Handler: rateLimitMatch(casbinMatch(EditUserHandler(serverCtx))),
 			},
 			{

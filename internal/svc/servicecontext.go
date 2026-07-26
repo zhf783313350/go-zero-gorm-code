@@ -120,7 +120,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 	// 允许 admin 角色访问所有的受保护接口
 	if len(enforcer.GetPolicy()) == 0 {
 		_, _ = enforcer.AddPolicy("admin", "/api/user/add", "POST")
-		_, _ = enforcer.AddPolicy("admin", "/api/user/edit", "POST")
+		_, _ = enforcer.AddPolicy("admin", "/api/user/update", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/delete", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/list", "POST")
 		// 绑定用户 ID 1 到 admin 角色进行演示测试

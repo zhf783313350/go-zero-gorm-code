@@ -189,18 +189,8 @@ func (l *UserLogic) AddUser(req *types.RegisterRequest) (*types.Response, error)
 }
 
 func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, error) {
-	if req.PhoneNumber == "" || req.ValidTime == "" {
-		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "手机号或有效时间不能为空")
-	}
-
-	validTime, err := time.Parse("2006-01-02 15:04:05", req.ValidTime)
-	if err != nil {
-		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "有效时间格式错误，应为: 2006-01-02 15:04:05")
-	}
-
-	user, err := l.svcCtx.UserRepo.FindByPhone(l.ctx, req.PhoneNumber)
-	if err != nil {
-		return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
+	if req.ID <= 0 {
+		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "用户ID不能为空")
 	}
 
 	if req.Password != "" {
@@ -209,36 +199,41 @@ func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, err
 			logx.Errorf("密码哈希失败: %v", err)
 			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "密码处理失败")
 		}
-		user.Password = string(hashedPassword)
+
+		err = l.svcCtx.DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hashedPassword), req.ID).Error
+		if err != nil {
+			logx.Errorf("更新用户失败: %v", err)
+			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+		}
 	}
 
-	user.Status = domain.UserStatus(req.Status)
-	user.ValidTime = validTime
-	user.UpdatedAt = time.Now()
-
-	err = l.svcCtx.UserRepo.Update(l.ctx, user)
-	if err != nil {
-		logx.Errorf("更新用户失败: %v", err)
-		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+	if req.PhoneNumber != "" {
+		err := l.svcCtx.DB.Exec("UPDATE users SET phoneNumber = ? WHERE id = ?", req.PhoneNumber, req.ID).Error
+		if err != nil {
+			logx.Errorf("更新用户手机号失败: %v", err)
+			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+		}
 	}
 
-	cacheKey := "user:phone:" + user.PhoneNumber
+	if req.ValidTime != "" {
+		_, err := time.Parse("2006-01-02 15:04:05", req.ValidTime)
+		if err != nil {
+			return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "有效时间格式错误，应为: 2006-01-02 15:04:05")
+		}
+		err = l.svcCtx.DB.Exec("UPDATE users SET validTime = ? WHERE id = ?", req.ValidTime, req.ID).Error
+		if err != nil {
+			logx.Errorf("更新用户有效时间失败: %v", err)
+			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+		}
+	}
 
-	// 【缓存延迟双删】解决主从复制延迟导致的脏缓存问题：
-	// 第一次删：立即删除旧缓存，让后续读请求穿透到数据库拿到最新数据并回填缓存。
-	// 第二次删（延迟 500ms）：覆盖主从延迟窗口期内可能被从库旧数据重新回填的缓存。
-	_, _ = l.svcCtx.Redis.Del(cacheKey)
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		_, _ = l.svcCtx.Redis.Del(cacheKey)
-		logx.Infof("[Cache] delayed double-delete executed for key: %s", cacheKey)
-	}()
-
-	// 异步投递用户更新事件
-	l.svcCtx.EventBus.Publish(event.UserEvent{
-		Type:        event.EventUserUpdated,
-		PhoneNumber: user.PhoneNumber,
-	})
+	if req.Status != 0 {
+		err := l.svcCtx.DB.Exec("UPDATE users SET status = ? WHERE id = ?", req.Status, req.ID).Error
+		if err != nil {
+			logx.Errorf("更新用户状态失败: %v", err)
+			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+		}
+	}
 
 	return &types.Response{
 		Code:    http.StatusOK,

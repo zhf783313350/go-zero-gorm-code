@@ -32,6 +32,7 @@ type RegisterRequest struct {
 }
 
 type UpdateUserRequest struct {
+	ID          int64  `json:"id"`
 	PhoneNumber string `json:"phoneNumber"`
 	Password    string `json:"password"`
 	Status      int    `json:"status"`

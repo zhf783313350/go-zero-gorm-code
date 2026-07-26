@@ -12,20 +12,31 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
+// func LoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		var req types.LoginRequest
+// 		if err := httpx.Parse(r, &req); err != nil {
+// 			httpx.ErrorCtx(r.Context(), w, err)
+// 			return
+// 		}
+// 		l := logic.NewUserLogic(r.Context(), svcCtx)
+// 		resp, err := l.Login(&req)
+// 		if err != nil {
+// 			httpx.ErrorCtx(r.Context(), w, err)
+// 		} else {
+// 			httpx.OkJsonCtx(r.Context(), w, resp)
+// 		}
+// 	}
+// }
 func LoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.LoginRequest
-		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-		l := logic.NewUserLogic(r.Context(), svcCtx)
-		resp, err := l.Login(&req)
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
-		}
+		// 绕过请求解析、数据库查询和密码 Scrypt 哈希比对
+		// 直接返回固定的成功字符串，用来测试 Go 框架自身的纯 HTTP 极限性能
+		httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{
+			"code":    200,
+			"message": "登录成功(纯 Mock 测试)",
+			"data":    "hello world",
+		})
 	}
 }
 func AddUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {

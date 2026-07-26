@@ -43,16 +43,13 @@ func main() {
 
 	ctx := svc.NewServiceContext(c)
 	handler.SetupRoutes(server, ctx)
-
 	// 1. 启动轻量级后台事件总线消费者
 	stopEventBus := make(chan struct{})
 	ctx.EventBus.Start(stopEventBus)
-
 	// 2. 启动 Web 服务
 	go func() {
 		server.Start()
 	}()
-
 	// 3. 监听系统终止信号
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

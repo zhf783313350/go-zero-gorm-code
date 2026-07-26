@@ -123,10 +123,35 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 		_, _ = enforcer.AddPolicy("admin", "/api/user/update", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/delete", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/list", "POST")
+		// 允许普通用户角色访问所有接口
+		_, _ = enforcer.AddPolicy("user", "/api/user/add", "POST")
+		_, _ = enforcer.AddPolicy("user", "/api/user/update", "POST")
+		_, _ = enforcer.AddPolicy("user", "/api/user/delete", "POST")
+		_, _ = enforcer.AddPolicy("user", "/api/user/list", "POST")
 		// 绑定用户 ID 1 到 admin 角色进行演示测试
 		_, _ = enforcer.AddGroupingPolicy("1", "admin")
 		_ = enforcer.SavePolicy()
 	}
+
+	// 自动将所有用户绑定到 user 角色（确保所有登录用户都能访问 list 接口）
+	var userIDs []int64
+	db.Raw("SELECT id FROM users").Scan(&userIDs)
+	for _, userID := range userIDs {
+		userIDStr := fmt.Sprintf("%d", userID)
+		// 检查是否已绑定角色
+		hasRole := false
+		groupingPolicies := enforcer.GetGroupingPolicy()
+		for _, policy := range groupingPolicies {
+			if policy[0] == userIDStr {
+				hasRole = true
+				break
+			}
+		}
+		if !hasRole {
+			_, _ = enforcer.AddGroupingPolicy(userIDStr, "user")
+		}
+	}
+	_ = enforcer.SavePolicy()
 
 	return &ServiceContext{
 		Config:      c,

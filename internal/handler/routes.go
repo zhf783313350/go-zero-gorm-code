@@ -13,13 +13,13 @@ func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 	rateLimitMatch := middleware.NewRateLimitMiddleware(serverCtx.RateLimiter).Handle
 	casbinMatch := middleware.NewCasbinMiddleware(serverCtx.Enforcer).Handle
 
-	// 1. 公共路由（无需 JWT，仅限流）
+	// 1. 公共路由（无需 JWT）
 	server.AddRoutes(
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
 				Path:    "/user/login",
-				Handler: rateLimitMatch(LoginHandler(serverCtx)),
+				Handler: LoginHandler(serverCtx),
 			},
 		},
 		rest.WithPrefix("/api"),

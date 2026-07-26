@@ -4,12 +4,12 @@ import (
 	"accesscontrol/internal/logic"
 	"accesscontrol/internal/svc"
 	"accesscontrol/internal/types"
+	"accesscontrol/internal/util"
 	"encoding/json"
 	"net/http"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func LoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
@@ -60,9 +60,9 @@ func EditUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 		if req.Password != "" {
 			logx.Infof("Processing password update for user %d", req.ID)
-			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+			hashedPassword, err := util.HashPassword(req.Password)
 			if err != nil {
-				logx.Errorf("bcrypt error: %v", err)
+				logx.Errorf("scrypt error: %v", err)
 				httpx.OkJsonCtx(r.Context(), w, types.Response{Code: 500, Message: "密码处理失败"})
 				return
 			}

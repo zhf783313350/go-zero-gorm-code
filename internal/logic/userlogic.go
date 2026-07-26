@@ -6,6 +6,7 @@ import (
 	"accesscontrol/internal/event"
 	"accesscontrol/internal/svc"
 	"accesscontrol/internal/types"
+	"accesscontrol/internal/util"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserLogic struct {
@@ -93,7 +93,7 @@ func (l *UserLogic) Login(req *types.LoginRequest) (*types.Response, error) {
 		return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户已过期")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if !util.VerifyPassword(user.Password, req.Password) {
 		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "密码错误")
 	}
 
@@ -146,7 +146,7 @@ func (l *UserLogic) AddUser(req *types.RegisterRequest) (*types.Response, error)
 		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "有效时间格式错误，应为: 2006-01-02 15:04:05")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		logx.Errorf("密码哈希失败: %v", err)
 		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "密码处理失败")
@@ -194,13 +194,13 @@ func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, err
 	}
 
 	if req.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		hashedPassword, err := util.HashPassword(req.Password)
 		if err != nil {
 			logx.Errorf("密码哈希失败: %v", err)
 			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "密码处理失败")
 		}
 
-		err = l.svcCtx.DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hashedPassword), req.ID).Error
+		err = l.svcCtx.DB.Exec("UPDATE users SET password = ? WHERE id = ?", hashedPassword, req.ID).Error
 		if err != nil {
 			logx.Errorf("更新用户失败: %v", err)
 			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")

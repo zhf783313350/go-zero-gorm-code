@@ -1,11 +1,17 @@
 Name: access-control-api
 Host: 0.0.0.0
 Port: 8080                # 👈 严格采用 go-zero 官方默认端口 8080
+ReadTimeout: 30
+WriteTimeout: 30
+MaxHeaderBytes: 10485760
+MaxConns: 100000
+CpuThreshold: 999
+Timeout: 30000
 
 # 日志配置
 Log:
   Mode: console
-  Level: info
+  Level: error
   Stat: false
 
 # 数据库配置 (PostgreSQL)
@@ -16,22 +22,22 @@ Database:
   Password: "123456"
   DBName: zero_gorm_code
   SSLMode: disable
-  MaxOpenConns: 20
-  MaxIdleConns: 5
+  MaxOpenConns: 100
+  MaxIdleConns: 50
   ConnMaxLifetime: 3600
 
 # 全局限流配置
 RateLimiter:
-  Rate: 100
-  Burst: 100
+  Rate: 1000
+  Burst: 500
 
 # Redis配置
 Redis:
   Host: redis:6379        # 👈 严格采用 Redis 官方默认端口 6379，并用服务名互联
   Password: ""
   DB: 0
-  PoolSize: 20
-  MinIdleConns: 5
+  PoolSize: 100
+  MinIdleConns: 50
 
 # JWT配置
 Auth:

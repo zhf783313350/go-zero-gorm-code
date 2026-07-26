@@ -33,4 +33,4 @@ COPY --from=builder /build/internal/svc/migrations /app/migrations
 RUN mkdir -p /app/internal/svc
 COPY --from=builder /build/internal/svc/migrations /app/internal/svc/migrations
 
-CMD ["./zero-app", "-f", "etc/access-control-api.yaml"]
+CMD ["./zero-app", "-f", "etc/config.yaml"]

@@ -43,6 +43,7 @@ func main() {
 
 	ctx := svc.NewServiceContext(c)
 	handler.SetupRoutes(server, ctx)
+
 	// 1. 启动轻量级后台事件总线消费者
 	stopEventBus := make(chan struct{})
 	ctx.EventBus.Start(stopEventBus)

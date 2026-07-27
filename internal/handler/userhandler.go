@@ -34,8 +34,8 @@ func LoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		// 直接返回固定的成功字符串，用来测试 Go 框架自身的纯 HTTP 极限性能
 		httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{
 			"code":    200,
-			"message": "登录成功(纯 Mock 测试)",
-			"data":    "hello world",
+			"message": "测试ci/cd",
+			"data":    "zhf783313350",
 		})
 	}
 }

@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: access-control-config
-  namespace: access-control
+  name: go-zero-gorm-code-config
+  namespace: go-zero-gorm-code
 data:
   config.yaml: |
-    Name: access-control-api
+    Name: go-zero-gorm-code-api
     Host: 0.0.0.0
     Port: 8080
     
     # 日志配置
     Log:
       Mode: file
-      Path: /var/log/access-control
+      Path: /var/log/go-zero-gorm-code
       Level: error
       Compress: true
       KeepDays: 30

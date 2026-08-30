@@ -1,23 +1,21 @@
 package svc
 
 import (
-	"accesscontrol/internal/config"
-	"accesscontrol/internal/domain"
-	"accesscontrol/internal/event"
-	"accesscontrol/internal/repository"
 	"fmt"
-	"time"
-
-	"github.com/zeromicro/go-zero/core/limit"
-	"github.com/zeromicro/go-zero/core/stores/redis"
-	"github.com/zeromicro/go-zero/core/syncx"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-
 	casbin "github.com/casbin/casbin/v2"
 	casbinmodel "github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
+	"github.com/zeromicro/go-zero/core/limit"
+	"github.com/zeromicro/go-zero/core/stores/redis"
+	"github.com/zeromicro/go-zero/core/syncx"
+	"go-zero-gorm-code/internal/config"
+	"go-zero-gorm-code/internal/domain"
+	"go-zero-gorm-code/internal/event"
+	"go-zero-gorm-code/internal/repository"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"time"
 )
 
 type ServiceContext struct {
@@ -124,11 +122,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 		_, _ = enforcer.AddPolicy("admin", "/api/user/update", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/delete", "POST")
 		_, _ = enforcer.AddPolicy("admin", "/api/user/list", "POST")
-		// 允许普通用户角色访问所有接口
-		_, _ = enforcer.AddPolicy("user", "/api/user/add", "POST")
-		_, _ = enforcer.AddPolicy("user", "/api/user/create", "POST")
-		_, _ = enforcer.AddPolicy("user", "/api/user/update", "POST")
-		_, _ = enforcer.AddPolicy("user", "/api/user/delete", "POST")
+		// 普通用户只允许查询列表，管理操作由 admin 角色负责。
 		_, _ = enforcer.AddPolicy("user", "/api/user/list", "POST")
 		// 绑定用户 ID 1 到 admin 角色进行演示测试
 		_, _ = enforcer.AddGroupingPolicy("1", "admin")

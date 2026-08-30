@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: access-control-api
-  namespace: access-control
+  name: go-zero-gorm-code-api
+  namespace: go-zero-gorm-code
   labels:
-    app: access-control-api
+    app: go-zero-gorm-code-api
     version: v1
 spec:
   replicas: 3
@@ -15,25 +15,25 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: access-control-api
+      app: go-zero-gorm-code-api
   template:
     metadata:
       labels:
-        app: access-control-api
+        app: go-zero-gorm-code-api
         version: v1
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: access-control-sa
+      serviceAccountName: go-zero-gorm-code-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
-        - name: access-control-api
-          image: access-control:latest
+        - name: go-zero-gorm-code-api
+          image: go-zero-gorm-code:latest
           imagePullPolicy: Always
           ports:
             - name: http
@@ -46,22 +46,22 @@ spec:
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: access-control-secrets
+                  name: go-zero-gorm-code-secrets
                   key: db-host
             - name: DB_PORT
               value: "5432"
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: access-control-secrets
+                  name: go-zero-gorm-code-secrets
                   key: db-user
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: access-control-secrets
+                  name: go-zero-gorm-code-secrets
                   key: db-password
             - name: DB_NAME
-              value: "access_control"
+              value: "go_zero_gorm_code"
             - name: REDIS_HOST
               value: "redis-service"
             - name: REDIS_PORT
@@ -69,7 +69,7 @@ spec:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: access-control-secrets
+                  name: go-zero-gorm-code-secrets
                   key: jwt-secret
           resources:
             requests:
@@ -82,7 +82,7 @@ spec:
             - name: config-volume
               mountPath: /app/etc
             - name: logs-volume
-              mountPath: /var/log/access-control
+              mountPath: /var/log/go-zero-gorm-code
           livenessProbe:
             httpGet:
               path: /health
@@ -106,7 +106,7 @@ spec:
       volumes:
         - name: config-volume
           configMap:
-            name: access-control-config
+            name: go-zero-gorm-code-config
         - name: logs-volume
           emptyDir: {}
       affinity:
@@ -119,6 +119,6 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - access-control-api
+                        - go-zero-gorm-code-api
                 topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 30

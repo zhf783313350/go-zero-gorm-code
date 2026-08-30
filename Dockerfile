@@ -1,5 +1,5 @@
-# 第一阶段：用标准的 Go 1.26 镜像在容器内部编译源码
-FROM golang:1.26-alpine AS builder
+# 第一阶段：用标准的 Go 1.27.0 镜像在容器内部编译源码
+FROM golang:1.27.0-alpine AS builder
 WORKDIR /build
 
 # 配置国内代理加速拉包

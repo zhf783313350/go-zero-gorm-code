@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    monitor: 'access-control-monitor'
+    monitor: 'go-zero-gorm-code-monitor'
 
 alerting:
   alertmanagers:
@@ -19,7 +19,7 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   # API 服务监控
-  - job_name: 'access-control-api'
+  - job_name: 'go-zero-gorm-code-api'
     static_configs:
       - targets: ['api:9090']
     metrics_path: /metrics

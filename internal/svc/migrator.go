@@ -10,6 +10,7 @@ import (
 )
 
 // 🔥 核心修复：添加 go:embed 指令，明确告诉 Go 编译器在编译时将 migrations 目录下的所有 sql 文件打包进二进制
+//
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 

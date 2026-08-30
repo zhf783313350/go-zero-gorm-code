@@ -1,21 +1,23 @@
 package logic
 
 import (
-	"accesscontrol/internal/domain"
-	"accesscontrol/internal/errorx"
-	"accesscontrol/internal/event"
-	"accesscontrol/internal/svc"
-	"accesscontrol/internal/types"
-	"accesscontrol/internal/util"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"go-zero-gorm-code/internal/domain"
+	"go-zero-gorm-code/internal/errorx"
+	"go-zero-gorm-code/internal/event"
+	"go-zero-gorm-code/internal/svc"
+	"go-zero-gorm-code/internal/types"
+	"go-zero-gorm-code/internal/util"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
+	"gorm.io/gorm"
 )
 
 type UserLogic struct {
@@ -193,46 +195,62 @@ func (l *UserLogic) EditUser(req *types.UpdateUserRequest) (*types.Response, err
 		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "用户ID不能为空")
 	}
 
+	oldUser, err := l.svcCtx.UserRepo.FindOne(l.ctx, req.ID)
+	if err != nil {
+		return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
+	}
+	updates := make(map[string]interface{})
 	if req.Password != "" {
 		hashedPassword, err := util.HashPassword(req.Password)
 		if err != nil {
 			logx.Errorf("密码哈希失败: %v", err)
 			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "密码处理失败")
 		}
-
-		err = l.svcCtx.DB.Exec("UPDATE users SET password = ? WHERE id = ?", hashedPassword, req.ID).Error
-		if err != nil {
-			logx.Errorf("更新用户失败: %v", err)
-			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
-		}
+		updates["password"] = hashedPassword
 	}
 
-	if req.PhoneNumber != "" {
-		err := l.svcCtx.DB.Exec("UPDATE users SET phoneNumber = ? WHERE id = ?", req.PhoneNumber, req.ID).Error
-		if err != nil {
-			logx.Errorf("更新用户手机号失败: %v", err)
-			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
-		}
+	phone := strings.TrimSpace(req.PhoneNumber)
+	if phone != "" {
+		updates["phoneNumber"] = phone
 	}
 
 	if req.ValidTime != "" {
-		_, err := time.Parse("2006-01-02 15:04:05", req.ValidTime)
-		if err != nil {
+		if _, err := time.Parse("2006-01-02 15:04:05", req.ValidTime); err != nil {
 			return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "有效时间格式错误，应为: 2006-01-02 15:04:05")
 		}
-		err = l.svcCtx.DB.Exec("UPDATE users SET validTime = ? WHERE id = ?", req.ValidTime, req.ID).Error
-		if err != nil {
-			logx.Errorf("更新用户有效时间失败: %v", err)
-			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
-		}
+		updates["validTime"] = req.ValidTime
 	}
 
 	if req.Status != 0 {
-		err := l.svcCtx.DB.Exec("UPDATE users SET status = ? WHERE id = ?", req.Status, req.ID).Error
-		if err != nil {
-			logx.Errorf("更新用户状态失败: %v", err)
-			return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+		updates["status"] = req.Status
+	}
+	if len(updates) == 0 {
+		return nil, errorx.NewCodeError(errorx.ErrCodeParamInvalid, "至少提供一个需要更新的字段")
+	}
+
+	err = l.svcCtx.DB.WithContext(l.ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Table("users").Where("id = ?", req.ID).Updates(updates)
+		if result.Error != nil {
+			return result.Error
 		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errorx.NewCodeError(errorx.ErrCodeUserNotFound, "用户不存在")
+		}
+		logx.Errorf("更新用户失败: %v", err)
+		return nil, errorx.NewCodeError(errorx.ErrCodeServerInternal, "更新用户失败")
+	}
+
+	if phone != "" && phone != oldUser.PhoneNumber {
+		_, _ = l.svcCtx.Redis.Del("user:phone:" + oldUser.PhoneNumber)
+	}
+	if phone != "" {
+		_, _ = l.svcCtx.Redis.Del("user:phone:" + phone)
 	}
 
 	return &types.Response{

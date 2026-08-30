@@ -1,11 +1,11 @@
 package main
 
 import (
-	"accesscontrol/internal/config"
-	"accesscontrol/internal/errorx"
-	"accesscontrol/internal/handler"
-	"accesscontrol/internal/svc"
 	"flag"
+	"go-zero-gorm-code/internal/config"
+	"go-zero-gorm-code/internal/errorx"
+	"go-zero-gorm-code/internal/handler"
+	"go-zero-gorm-code/internal/svc"
 	"net/http"
 	"os"
 	"os/signal"

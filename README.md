@@ -1,4 +1,4 @@
-# Access Control 权限管理系统
+# go-zero-gorm-code 权限管理系统
 
 基于 go-zero + Docker + Kubernetes 的微服务权限管理系统
 
@@ -16,7 +16,7 @@
 ## 📁 项目结构
 
 ```
-access-control/
+go-zero-gorm-code/
 ├── main.go                      # 程序入口
 ├── etc/
 │   ├── config.yaml             # 本地开发配置
@@ -36,8 +36,8 @@ access-control/
 │   ├── nginx/                  # Nginx 配置
 │   ├── prometheus/             # Prometheus 配置
 │   └── grafana/                # Grafana 配置
-├── Dockerfile                   # Docker 构建文件 (Go 1.26.0)
-├── Dockerfile.prod             # Docker 构建文件 (生产环境，Go 1.26.0)
+├── Dockerfile                   # Docker 构建文件 (Go 1.27.0)
+├── Dockerfile.prod             # Docker 构建文件 (生产环境，Go 1.27.0)
 ├── docker-compose.yml          # Docker Compose (开发)
 ├── docker-compose.prod.yml     # Docker Compose (生产)
 ├── deploy.sh                   # 部署脚本 (Linux/Mac)
@@ -49,7 +49,7 @@ access-control/
 
 ### 环境要求
 
-- **Go 1.26.0+** [UPDATED]
+- **Go 1.27.0+**
 - Docker 20.0+
 - Docker Compose 2.0+
 - PostgreSQL 14+ (或使用 Docker)
@@ -59,8 +59,8 @@ access-control/
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/zhf783313350/access-control.git
-cd access-control
+git clone https://github.com/zhf783313350/go-zero-gorm-code.git
+cd go-zero-gorm-code
 
 # 2. 安装依赖
 go mod tidy

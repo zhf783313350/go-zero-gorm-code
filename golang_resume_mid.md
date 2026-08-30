@@ -44,7 +44,7 @@ GitHub主页：github.com/zhf783313350
 
 五、 项目经验
 
-项目一：微服务统一访问控制与权限管理系统 (Access Control)
+项目一：微服务统一访问控制与权限管理系统 (go-zero-gorm-code)
 项目角色：后端开发工程师
 技术选型：Go、Go-Zero、GORM、PostgreSQL、Redis、Docker、Kubernetes、golang-migrate
 项目描述：该系统是为集团内部多业务线提供统一认证与权限管控的微服务系统。系统实现用户状态管理、动态路由权限鉴权、JWT 身份验证以及基础接口限流功能。

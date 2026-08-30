@@ -10,11 +10,11 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # 配置
-PROJECT_NAME="access-control"
+PROJECT_NAME="go-zero-gorm-code"
 COMPOSE_FILE="docker-compose.prod.yml"
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  Access Control 生产环境部署脚本${NC}"
+echo -e "${GREEN}  go-zero-gorm-code 生产环境部署脚本${NC}"
 echo -e "${GREEN}========================================${NC}"
 
 # 检查 .env 文件

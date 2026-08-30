@@ -1,10 +1,10 @@
 package repository
 
 import (
-	"accesscontrol/internal/domain"
-	"accesscontrol/internal/model"
 	"context"
 	"database/sql"
+	"go-zero-gorm-code/internal/domain"
+	"go-zero-gorm-code/internal/model"
 	"time"
 
 	"gorm.io/gorm"

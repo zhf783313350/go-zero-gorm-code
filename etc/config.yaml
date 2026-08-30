@@ -1,4 +1,4 @@
-Name: access-control-api
+Name: go-zero-gorm-code-api
 Host: 0.0.0.0
 Port: 8080                # 👈 严格采用 go-zero 官方默认端口 8080
 ReadTimeout: 30
@@ -20,7 +20,7 @@ Database:
   Port: 5432              # 👈 严格采用 Postgres 官方默认端口 5432
   User: postgres
   Password: "123456"
-  DBName: zero_gorm_code
+  DBName: go_zero_gorm_code
   SSLMode: disable
   MaxOpenConns: 100
   MaxIdleConns: 50

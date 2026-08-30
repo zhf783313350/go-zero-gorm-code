@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: access-control-ingress
-  namespace: access-control
+  name: go-zero-gorm-code-ingress
+  namespace: go-zero-gorm-code
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
@@ -13,20 +13,20 @@ metadata:
     nginx.ingress.kubernetes.io/limit-connections: "100"
 spec:
   rules:
-    - host: api.access-control.local
+    - host: api.go-zero-gorm-code.local
       http:
         paths:
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: access-control-service
+                name: go-zero-gorm-code-service
                 port:
                   number: 8080
           - path: /health
             pathType: Exact
             backend:
               service:
-                name: access-control-service
+                name: go-zero-gorm-code-service
                 port:
                   number: 8080

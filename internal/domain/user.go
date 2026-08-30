@@ -46,22 +46,16 @@ type UserCriteria struct {
 	PageSize    int
 }
 
-type Repository[T any] interface {
-	Insert(ctx context.Context, entity *T) error
-	Update(ctx context.Context, entity *T) error
+// UserRepository 定义用户业务实际需要的数据访问操作。
+// 直接列出方法比泛型接口嵌套更容易阅读，也方便测试时编写 mock。
+type UserRepository interface {
+	Insert(ctx context.Context, user *User) error
+	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, id int64) error
-	FindOne(ctx context.Context, id int64) (*T, error)
-}
-
-type UserQuery interface {
+	FindOne(ctx context.Context, id int64) (*User, error)
 	FindByPhone(ctx context.Context, phone string) (*User, error)
 	FindByStatus(ctx context.Context, status UserStatus) (*User, error)
 	List(ctx context.Context, criteria UserCriteria) ([]User, int, error)
-}
-
-type UserRepository interface {
-	Repository[User]
-	UserQuery
 }
 
 type UserService struct {

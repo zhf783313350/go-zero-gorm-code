@@ -1,10 +1,10 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: access-control-pdb
-  namespace: access-control
+  name: go-zero-gorm-code-pdb
+  namespace: go-zero-gorm-code
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app: access-control-api
+      app: go-zero-gorm-code-api

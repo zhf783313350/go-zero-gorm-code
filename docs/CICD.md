@@ -105,7 +105,7 @@ kubectl apply -f deploy/k8s/ --context=prod-cluster
 ```yaml
 env:
   REGISTRY: your-registry.com  # 修改为你的镜像仓库
-  IMAGE_NAME: your-org/access-control
+  IMAGE_NAME: your-org/go-zero-gorm-code
 ```
 
 ### 修改 K8s 命名空间

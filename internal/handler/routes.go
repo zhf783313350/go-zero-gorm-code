@@ -1,11 +1,10 @@
 package handler
 
 import (
-	"accesscontrol/internal/middleware"
-	"accesscontrol/internal/svc"
-	"net/http"
-
 	"github.com/zeromicro/go-zero/rest"
+	"go-zero-gorm-code/internal/middleware"
+	"go-zero-gorm-code/internal/svc"
+	"net/http"
 )
 
 func SetupRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {

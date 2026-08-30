@@ -1,7 +1,7 @@
 .PHONY: build run test clean docker docker-push deploy-k8s
 
 # 变量
-APP_NAME := access-control
+APP_NAME := go-zero-gorm-code
 DOCKER_IMAGE := $(APP_NAME)
 DOCKER_TAG := latest
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -98,15 +98,15 @@ undeploy-k8s:
 
 # K8s 状态
 status-k8s:
-	kubectl get all -n access-control
+	kubectl get all -n go-zero-gorm-code
 
 # K8s 重启
 restart-k8s:
-	kubectl rollout restart deployment/access-control-api -n access-control
+	kubectl rollout restart deployment/go-zero-gorm-code-api -n go-zero-gorm-code
 
 # K8s 日志
 logs-k8s:
-	kubectl logs -f -l app=access-control-api -n access-control
+	kubectl logs -f -l app=go-zero-gorm-code-api -n go-zero-gorm-code
 
 # ==================== 数据库相关 ====================
 
@@ -114,7 +114,7 @@ logs-k8s:
 db-backup:
 	@mkdir -p backups
 	docker-compose -f docker-compose.prod.yml exec -T postgres \
-		pg_dump -U postgres access_control > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+		pg_dump -U postgres go_zero_gorm_code > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
 
 # 数据库迁移 (使用 golang-migrate CLI, 如果本地安装了的话)
 # 也可以直接运行应用，应用启动时会自动 migrate

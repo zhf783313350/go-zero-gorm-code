@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: access-control-service
-  namespace: access-control
+  name: go-zero-gorm-code-service
+  namespace: go-zero-gorm-code
   labels:
-    app: access-control-api
+    app: go-zero-gorm-code-api
 spec:
   type: ClusterIP
   ports:
@@ -13,17 +13,17 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: access-control-api
+    app: go-zero-gorm-code-api
 
 ---
 # NodePort Service（用于外部访问）
 apiVersion: v1
 kind: Service
 metadata:
-  name: access-control-nodeport
-  namespace: access-control
+  name: go-zero-gorm-code-nodeport
+  namespace: go-zero-gorm-code
   labels:
-    app: access-control-api
+    app: go-zero-gorm-code-api
 spec:
   type: NodePort
   ports:
@@ -33,4 +33,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: access-control-api
+    app: go-zero-gorm-code-api

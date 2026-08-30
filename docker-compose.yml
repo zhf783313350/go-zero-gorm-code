@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "123456"
-      POSTGRES_DB: zero_gorm_code
+      POSTGRES_DB: go_zero_gorm_code
     ports:
       - "5432:5432"
     volumes:
